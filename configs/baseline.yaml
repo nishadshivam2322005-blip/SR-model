@@ -1,0 +1,69 @@
+# FlexScaleSR baseline configuration.
+# Every number below was chosen for THIS dataset (100 train / 20 val / 20 test
+# pairs) and THIS machine (NVIDIA RTX 3050 Laptop, 6 GB).
+
+data:
+  root: "E:/Hackathon"
+
+  # HR TIFFs are uint16 holding reflectance * hr_scale.
+  # 10000 is the standard Sentinel-2 style convention and is what we use.
+  # Measured note: HR/10000 is systematically about 0.76x the LR reflectance,
+  # because LR and HR come from different sensors. That is a real radiometric
+  # offset, not a scaling error, and the network learns to correct it.
+  hr_scale: 10000.0
+
+  # Verified band orders. LR is permuted to the canonical order before use.
+  lr_band_order: [B, G, R, NIR]      # Sentinel-2 B02, B03, B04, B08
+  hr_band_order: [R, G, B, NIR]      # verified radiometrically, see notebook 01
+  canonical_band_order: [R, G, B, NIR]
+
+model:
+  in_channels: 4          # R, G, B, NIR
+  out_channels: 4         # R, G, B, NIR - NIR is always predicted
+  features: 64
+  num_res_blocks: 12      # gives about 1.39 M parameters
+  upsample_factor: 8      # PixelShuffle 2x2x2, then resize down to the exact HR size
+
+  # Physical range guard, applied in EVAL MODE ONLY so training gradients are
+  # untouched. Reflectance is never negative, and only 302 of the 57.5 million
+  # real HR pixels exceed 1.5, so this clips nothing real while still catching
+  # a runaway prediction.
+  max_reflectance: 1.5
+
+metrics:
+  # A pixel whose 4-band vector is shorter than this is effectively black and
+  # has no spectral direction, so it is excluded from SAM instead of being
+  # given a meaningless 90 degrees. Used by both the loss and the metric.
+  sam_min_norm: 0.001
+  # ERGAS divides each band's RMSE by that band's mean, so scenes with a very
+  # dark band produce huge values. Read the median as well as the mean.
+  ergas_dark_band_threshold: 0.02
+
+training:
+  device: auto            # auto | cuda | cpu
+  seed: 42
+  batch_size: 4           # images are batched only with others of the same HR size
+  epochs: 100
+  learning_rate: 0.0002
+  weight_decay: 0.00001
+  mixed_precision: true   # used only when a CUDA GPU is present
+  early_stopping_patience: 20
+  num_workers: 0          # 0 is the safe choice on Windows
+  augment: true           # horizontal flip, vertical flip, 90-degree rotation
+
+loss:
+  charbonnier_weight: 1.0
+  sam_weight: 0.1
+  gradient_weight: 0.05
+
+# Used by the smoke test in notebook 03. Keeps everything tiny and fast.
+smoke_test:
+  max_train_samples: 8
+  max_val_samples: 4
+  epochs: 2
+  batch_size: 2
+
+paths:
+  checkpoints: "checkpoints"
+  outputs: "outputs"
+  experiments: "experiments"
