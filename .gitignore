@@ -1,0 +1,26 @@
+# Never commit the dataset - it is large and it is the original source data.
+train/
+val/
+test/
+
+# Generated artefacts
+checkpoints/
+outputs/
+experiments/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini

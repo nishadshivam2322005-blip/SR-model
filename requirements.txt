@@ -1,0 +1,26 @@
+# FlexScaleSR requirements.
+# Versions below are the ones this project was actually built and tested with.
+#
+# Install PyTorch first, matched to your CUDA version. For CUDA 12.1:
+#   pip install torch==2.5.1 torchvision --index-url https://download.pytorch.org/whl/cu121
+# For CPU only:
+#   pip install torch torchvision
+
+torch>=2.1
+torchvision>=0.16
+
+numpy>=1.24
+pandas>=2.0
+matplotlib>=3.7
+opencv-python>=4.8          # bicubic resize for the baseline
+tifffile>=2024.1            # scientific TIFF reader, keeps dtype and all 4 bands
+imagecodecs>=2024.1         # DEFLATE decoding for these TIFFs
+scikit-image>=0.22          # SSIM
+PyYAML>=6.0
+jupyter>=1.0
+notebook>=7.0
+
+# Optional. tifffile already reads and writes the GeoTIFF tags this project
+# needs, so rasterio is not required. Install it only if you want a full GDAL
+# stack for reprojection or vector work.
+# rasterio>=1.3
